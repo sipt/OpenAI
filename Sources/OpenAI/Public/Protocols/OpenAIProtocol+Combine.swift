@@ -18,13 +18,13 @@ public struct CancelPublisher<Output, Failure> where Failure : Error {
     var publisher: AnyPublisher<Output, Failure>
     var task: URLSessionDataTask?
     
-    func cancel() {
+    public func cancel() {
         if let task = self.task {
             task.cancel()
         }
     }
 
-    func sink(receiveCompletion: @escaping (Subscribers.Completion<Failure>) -> Void,
+    public func sink(receiveCompletion: @escaping (Subscribers.Completion<Failure>) -> Void,
               receiveValue: @escaping (Output) -> Void) -> AnyCancellable {
         publisher.sink(receiveCompletion: receiveCompletion, receiveValue: receiveValue)
     }
