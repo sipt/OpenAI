@@ -32,10 +32,11 @@ final class StreamingSession<ResultType: Codable>: NSObject, Identifiable, URLSe
         self.urlRequest = urlRequest
     }
     
-    func perform() {
-        self.urlSession
-            .dataTask(with: self.urlRequest)
-            .resume()
+    func perform() -> URLSessionDataTask {
+        let task: URLSessionDataTask
+        task = self.urlSession.dataTask(with: self.urlRequest)
+        task.resume()
+        return task
     }
     
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {

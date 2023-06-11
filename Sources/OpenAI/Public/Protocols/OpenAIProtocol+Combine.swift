@@ -8,6 +8,27 @@
 #if canImport(Combine)
 
 import Combine
+import Foundation
+
+@available(iOS 13.0, *)
+@available(tvOS 13.0, *)
+@available(macOS 10.15, *)
+@available(watchOS 6.0, *)
+public struct CancelPublisher<Output, Failure> where Failure : Error {
+    var publisher: AnyPublisher<Output, Failure>
+    var task: URLSessionDataTask?
+    
+    func cancel() {
+        if let task = self.task {
+            task.cancel()
+        }
+    }
+
+    func sink(receiveCompletion: @escaping (Subscribers.Completion<Failure>) -> Void,
+              receiveValue: @escaping (Output) -> Void) -> AnyCancellable {
+        publisher.sink(receiveCompletion: receiveCompletion, receiveValue: receiveValue)
+    }
+}
 
 @available(iOS 13.0, *)
 @available(tvOS 13.0, *)
@@ -22,9 +43,9 @@ public extension OpenAIProtocol {
         .eraseToAnyPublisher()
     }
     
-    func completionsStream(query: CompletionsQuery) -> AnyPublisher<Result<CompletionsResult, Error>, Error> {
+    func completionsStream(query: CompletionsQuery) -> CancelPublisher<Result<CompletionsResult, Error>, Error> {
         let progress = PassthroughSubject<Result<CompletionsResult, Error>, Error>()
-        completionsStream(query: query) { result in
+        let task = completionsStream(query: query) { result in
             progress.send(result)
         } completion: { error in
             if let error {
@@ -33,7 +54,7 @@ public extension OpenAIProtocol {
                 progress.send(completion: .finished)
             }
         }
-        return progress.eraseToAnyPublisher()
+        return CancelPublisher(publisher: progress.eraseToAnyPublisher(), task: task)
     }
 
     func images(query: ImagesQuery) -> AnyPublisher<ImagesResult, Error> {
@@ -57,9 +78,9 @@ public extension OpenAIProtocol {
         .eraseToAnyPublisher()
     }
     
-    func chatsStream(query: ChatQuery) -> AnyPublisher<Result<ChatStreamResult, Error>, Error> {
+    func chatsStream(query: ChatQuery) -> CancelPublisher<Result<ChatStreamResult, Error>, Error> {
         let progress = PassthroughSubject<Result<ChatStreamResult, Error>, Error>()
-        chatsStream(query: query) { result in
+        let task = chatsStream(query: query) { result in
             progress.send(result)
         } completion: { error in
             if let error {
@@ -68,7 +89,7 @@ public extension OpenAIProtocol {
                 progress.send(completion: .finished)
             }
         }
-        return progress.eraseToAnyPublisher()
+        return CancelPublisher(publisher: progress.eraseToAnyPublisher(), task: task)
     }
     
     func edits(query: EditsQuery) -> AnyPublisher<EditsResult, Error> {
@@ -113,5 +134,7 @@ public extension OpenAIProtocol {
         .eraseToAnyPublisher()
     }
 }
+
+
 
 #endif
